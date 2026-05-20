@@ -1,0 +1,30 @@
+# ── LangChain Core ───────────────────────────────────────────────────────────
+langchain==0.3.14
+langchain-core==0.3.30
+langchain-community==0.3.14
+langgraph==0.2.60
+
+# ── LLM Providers ────────────────────────────────────────────────────────────
+langchain-openai==0.3.1
+langchain-google-genai==2.0.8
+langchain-groq==0.2.3
+langchain-mistralai==0.2.4
+
+# ── API & Server ─────────────────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn==0.34.0
+
+# ── Utilities ────────────────────────────────────────────────────────────────
+python-dotenv==1.0.1
+tiktoken==0.8.0
+qdrant-client==1.12.1
+langchain-qdrant==0.2.0
+langchain-huggingface==1.2.2
+
+python-dotenv==1.0.1
+langchain==0.3.14
+langchain-core==0.3.30
+langchain-mistralai==0.2.4
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4

@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CLOVER AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#03060a;--bg2:#070d12;--bg3:#0d1a22;
+  --border:rgba(0,210,200,0.08);--border2:rgba(0,210,200,0.15);--border3:rgba(0,210,200,0.28);
+  --text:#e8f4f8;--text2:rgba(200,230,235,0.6);--text3:rgba(150,200,210,0.35);
+  --accent:#00d4c8;--accent2:#0099cc;
+  --pill:rgba(0,180,180,0.06);--pill-h:rgba(0,180,180,0.12);
+  /* mode colors */
+  --mode-global:#00d4c8;--mode-global2:#0099cc;
+  --mode-sum:#a855f7;--mode-sum2:#7c3aed;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 40% at 15% 50%,rgba(0,140,180,0.07) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 35% at 85% 50%,rgba(0,160,200,0.06) 0%,transparent 70%),
+    radial-gradient(ellipse 80% 50% at 50% 0%,rgba(0,100,140,0.05) 0%,transparent 60%)}
+body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:35%;z-index:0;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,180,200,0.04) 0%,transparent 100%)}
+.scanlines{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.018;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,180,200,.5) 2px,rgba(0,180,200,.5) 3px)}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;background:rgba(3,6,10,0.85);backdrop-filter:blur(28px);border-bottom:1px solid var(--border2);box-shadow:0 1px 0 rgba(0,212,200,0.06),0 4px 30px rgba(0,0,0,0.5)}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.sb-toggle{width:30px;height:30px;border-radius:8px;cursor:pointer;background:var(--pill);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.sb-toggle svg{width:14px;height:14px;stroke:var(--text2);fill:none;stroke-width:2}
+.sb-toggle:hover{background:var(--pill-h);border-color:var(--border3)}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.3px}
+.logo-dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000;box-shadow:0 0 12px rgba(0,212,200,0.45)}
+.logo em{font-style:normal;color:var(--accent);text-shadow:0 0 18px rgba(0,212,200,0.5)}
+.topbar-center{display:flex;align-items:center;background:rgba(0,0,0,0.25);border:1px solid var(--border2);border-radius:12px;overflow:hidden}
+.navbtn{padding:7px 16px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;background:none;border:none;position:relative}
+.navbtn:hover{color:var(--text)}
+.navbtn.active{color:var(--accent);background:rgba(0,212,200,0.08)}
+.navbtn.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:60%;height:2px;background:var(--accent);border-radius:2px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.model-sel{display:flex;align-items:center;gap:7px;background:var(--pill);border:1px solid var(--border2);padding:7px 12px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .2s}
+.model-sel:hover{background:var(--pill-h);color:var(--text)}
+.model-sel svg{width:11px;height:11px;opacity:.5;stroke:currentColor;fill:none;stroke-width:2}
+.tbtn{display:flex;align-items:center;gap:6px;background:var(--pill);border:1px solid var(--border2);padding:7px 12px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);transition:all .2s;font-family:'DM Sans',sans-serif}
+.tbtn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.tbtn:hover{background:var(--pill-h);border-color:var(--border3);color:var(--text)}
+
+/* LAYOUT */
+.layout{display:flex;height:100vh;padding-top:57px}
+
+/* SIDEBAR */
+.sidebar{width:260px;flex-shrink:0;background:rgba(3,7,11,0.98);border-right:1px solid var(--border2);display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:40;transition:width .3s ease,border .3s ease}
+.sidebar.collapsed{width:0;border-right-color:transparent}
+.sb-head{padding:14px 12px 10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:9px;flex-shrink:0}
+.sb-newbtn{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(0,180,180,0.1),rgba(0,100,150,0.1));border:1px solid var(--border3);border-radius:10px;padding:9px 14px;cursor:pointer;width:100%;font-size:12px;font-weight:600;color:var(--accent);font-family:'DM Sans',sans-serif;transition:all .2s}
+.sb-newbtn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5}
+.sb-newbtn:hover{background:linear-gradient(135deg,rgba(0,180,180,0.18),rgba(0,100,150,0.18));box-shadow:0 0 14px rgba(0,212,200,0.08)}
+.sb-search{display:flex;align-items:center;gap:7px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:7px 10px}
+.sb-search svg{width:11px;height:11px;stroke:var(--text3);fill:none;stroke-width:2;flex-shrink:0}
+.sb-search input{background:none;border:none;outline:none;font-size:12px;color:var(--text2);font-family:'DM Sans',sans-serif;width:100%}
+.sb-search input::placeholder{color:var(--text3)}
+.sb-body{flex:1;overflow-y:auto;padding-bottom:10px;min-height:0}
+.sb-body::-webkit-scrollbar{width:2px}
+.sb-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sb-label{padding:14px 13px 6px;font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--text3);font-family:'Syne',sans-serif;white-space:nowrap}
+
+/* ══════════════════════════════════
+   MODE SWITCHER  (the new feature)
+   ══════════════════════════════════ */
+.mode-switcher{
+  margin:0 10px 4px;
+  background:rgba(0,0,0,0.3);
+  border:1px solid var(--border2);
+  border-radius:12px;
+  padding:5px;
+  display:flex;
+  gap:4px;
+}
+.mode-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 8px;border-radius:8px;cursor:pointer;
+  font-size:11px;font-weight:700;font-family:'Syne',sans-serif;
+  border:1px solid transparent;
+  transition:all .25s;color:var(--text3);
+  position:relative;overflow:hidden;
+}
+.mode-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.mode-btn.global-btn.active{
+  background:linear-gradient(135deg,rgba(0,212,200,0.18),rgba(0,153,204,0.14));
+  border-color:rgba(0,212,200,0.4);
+  color:var(--mode-global);
+  box-shadow:0 0 16px rgba(0,212,200,0.12),inset 0 1px 0 rgba(0,212,200,0.1);
+}
+.mode-btn.sum-btn.active{
+  background:linear-gradient(135deg,rgba(168,85,247,0.18),rgba(124,58,237,0.14));
+  border-color:rgba(168,85,247,0.4);
+  color:var(--mode-sum);
+  box-shadow:0 0 16px rgba(168,85,247,0.12),inset 0 1px 0 rgba(168,85,247,0.1);
+}
+.mode-btn:not(.active):hover{color:var(--text2);background:rgba(255,255,255,0.03)}
+.mode-badge{
+  position:absolute;top:4px;right:5px;
+  font-size:8px;font-weight:800;letter-spacing:.5px;
+  padding:1px 4px;border-radius:3px;
+  font-family:'Syne',sans-serif;
+}
+.global-btn .mode-badge{background:rgba(0,212,200,0.15);color:var(--mode-global)}
+.sum-btn .mode-badge{background:rgba(168,85,247,0.15);color:var(--mode-sum)}
+/* active mode indicator strip at top of chat */
+.mode-indicator{
+  position:fixed;top:57px;left:0;right:0;z-index:45;
+  height:2px;
+  background:linear-gradient(90deg,var(--mode-global),var(--mode-global2));
+  transition:background .4s ease;
+}
+.mode-indicator.sum{background:linear-gradient(90deg,var(--mode-sum),var(--mode-sum2))}
+
+/* Mode context pill inside chat area */
+.mode-context-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 14px;border-radius:50px;font-size:11px;font-weight:600;
+  font-family:'Syne',sans-serif;letter-spacing:.3px;
+  border:1px solid;margin:0 auto 4px;
+  animation:slideIn .3s ease;
+}
+.mode-context-pill.global{
+  background:rgba(0,212,200,0.07);border-color:rgba(0,212,200,0.25);color:var(--mode-global);
+}
+.mode-context-pill.sum{
+  background:rgba(168,85,247,0.07);border-color:rgba(168,85,247,0.25);color:var(--mode-sum);
+}
+.mode-context-pill span{width:6px;height:6px;border-radius:50%;display:inline-block;animation:pulse 2s infinite}
+.mode-context-pill.global span{background:var(--mode-global);box-shadow:0 0 6px var(--mode-global)}
+.mode-context-pill.sum span{background:var(--mode-sum);box-shadow:0 0 6px var(--mode-sum)}
+
+/* placeholder tip in summarize mode */
+.sum-tip{
+  background:rgba(168,85,247,0.05);
+  border:1px solid rgba(168,85,247,0.15);
+  border-radius:12px;padding:14px 16px;
+  font-size:12px;color:rgba(168,85,247,0.7);
+  font-family:'DM Sans',sans-serif;line-height:1.6;
+  text-align:center;margin:12px 0;
+  animation:slideIn .3s ease;
+}
+.sum-tip strong{color:var(--mode-sum)}
+
+/* ── QUICK PROMPTS ── */
+.sb-prompts{display:flex;flex-direction:column;gap:4px;padding:0 10px 4px}
+.sb-prompt-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:rgba(0,0,0,0.2);transition:all .22s}
+.sb-prompt-item:hover{background:rgba(0,212,200,0.07);border-color:rgba(0,212,200,0.3);transform:translateX(3px)}
+.sb-prompt-item:hover .sb-prompt-icon{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000}
+.sb-prompt-item:hover .sb-prompt-text{color:var(--accent)}
+.sb-prompt-icon{width:26px;height:26px;border-radius:7px;flex-shrink:0;background:rgba(0,212,200,0.08);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:all .22s}
+.sb-prompt-icon svg{width:12px;height:12px;stroke:var(--accent);fill:none;stroke-width:2}
+.sb-prompt-text{font-size:12px;font-weight:500;color:var(--text2);font-family:'DM Sans',sans-serif;transition:color .2s;line-height:1.3}
+.sb-prompt-sub{font-size:10px;color:var(--text3);font-family:'DM Sans',sans-serif;margin-top:1px}
+
+/* summarize quick prompts use purple */
+.sb-prompt-item.sum-prompt:hover{background:rgba(168,85,247,0.07);border-color:rgba(168,85,247,0.3)}
+.sb-prompt-item.sum-prompt:hover .sb-prompt-icon{background:linear-gradient(135deg,var(--mode-sum),var(--mode-sum2))}
+.sb-prompt-item.sum-prompt:hover .sb-prompt-text{color:var(--mode-sum)}
+.sb-prompt-item.sum-prompt .sb-prompt-icon{background:rgba(168,85,247,0.08);border-color:rgba(168,85,247,0.2)}
+.sb-prompt-item.sum-prompt .sb-prompt-icon svg{stroke:var(--mode-sum)}
+
+/* hidden by mode */
+.global-prompts,.sum-prompts{transition:opacity .2s}
+.global-prompts.hidden,.sum-prompts.hidden{display:none}
+
+.sb-divider{height:1px;background:var(--border);margin:10px 12px}
+.sb-sys{margin:0 10px 10px;background:rgba(0,212,200,0.03);border:1px solid rgba(0,212,200,0.12);border-radius:11px;overflow:hidden}
+.sb-sys-hdr{display:flex;align-items:center;gap:7px;padding:9px 11px;border-bottom:1px solid rgba(0,212,200,0.08);cursor:pointer;user-select:none}
+.sb-sys-hdr .icon{width:12px;height:12px;stroke:var(--accent);fill:none;stroke-width:2;flex-shrink:0}
+.sb-sys-hdr-label{font-size:11px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;flex:1;white-space:nowrap}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.chevron{width:10px;height:10px;stroke:var(--text3);fill:none;stroke-width:2;transition:transform .25s;flex-shrink:0}
+.chevron.open{transform:rotate(180deg)}
+.sb-sys-body{padding:8px 9px;display:flex;flex-direction:column;gap:5px}
+.sb-sys-msg{display:flex;align-items:flex-start;gap:7px;padding:7px 9px;border-radius:8px;background:rgba(0,0,0,0.2);animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.sb-sys-av{width:20px;height:20px;border-radius:5px;flex-shrink:0;margin-top:1px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#000;font-family:'Syne',sans-serif;box-shadow:0 0 8px rgba(0,212,200,0.2)}
+.sb-sys-txt{font-size:11px;line-height:1.55;color:var(--text2);font-family:'DM Sans',sans-serif;word-break:break-word}
+.sb-sys-time{font-size:9px;color:var(--text3);margin-top:3px;font-family:'DM Sans',sans-serif}
+.sb-hist-item{display:flex;align-items:center;gap:8px;margin:1px 9px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.sb-hist-item:hover{background:rgba(0,212,200,0.05);border-color:var(--border)}
+.sb-hist-item.active{background:rgba(0,212,200,0.08);border-color:var(--border2)}
+.sb-hist-item svg{width:12px;height:12px;stroke:var(--text3);fill:none;stroke-width:2;flex-shrink:0}
+.sb-hist-item span{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Sans',sans-serif}
+.sb-hist-item:hover span,.sb-hist-item.active span{color:var(--accent)}
+.sb-empty{padding:10px 13px;font-size:11px;color:var(--text3);font-family:'DM Sans',sans-serif;font-style:italic}
+.sb-foot{padding:11px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.sb-foot-av{width:28px;height:28px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;font-family:'Syne',sans-serif;box-shadow:0 0 10px rgba(0,212,200,0.25)}
+.sb-foot-info{flex:1;min-width:0}
+.sb-foot-name{font-size:12px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-foot-sub{font-size:10px;color:var(--text3);font-family:'DM Sans',sans-serif}
+.sb-foot-badge{background:rgba(0,212,200,0.1);border:1px solid var(--border2);border-radius:5px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;white-space:nowrap}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;z-index:1;min-width:0}
+#orb{position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);width:300px;height:300px;pointer-events:none;opacity:0;transition:opacity 1.2s ease}
+#orb.show{opacity:1}
+.welcome{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:10;padding-top:60px;transition:all .4s ease}
+.welcome.gone{opacity:0;transform:translateY(-20px);pointer-events:none}
+.orb-space{height:240px;position:relative}
+.welcome-badge{position:absolute;top:52px;left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:50px;background:rgba(3,6,10,0.55);border:1px solid rgba(0,212,200,0.22);font-size:11px;font-weight:500;color:var(--accent);letter-spacing:.5px;font-family:'DM Sans',sans-serif;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 0 18px rgba(0,212,200,0.08);z-index:20}
+.welcome-badge span{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);display:inline-block;animation:pulse 2s infinite}
+.welcome h1{font-size:clamp(22px,3vw,38px);font-weight:800;letter-spacing:-1px;margin-bottom:10px;line-height:1.15;font-family:'Syne',sans-serif}
+.welcome h1 em{font-style:normal;color:var(--accent);text-shadow:0 0 30px rgba(0,212,200,0.5),0 0 60px rgba(0,212,200,0.2)}
+.welcome p{font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6}
+.welcome-hint{font-size:12px;color:var(--text3);font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px}
+.welcome-hint svg{width:12px;height:12px;stroke:var(--accent);fill:none;stroke-width:2;opacity:.7}
+
+/* CHAT VIEW */
+.chat-view{display:none;flex-direction:column;width:100%;max-width:740px;flex:1;overflow-y:auto;padding:90px 24px 150px;gap:18px;scroll-behavior:smooth}
+.chat-view.on{display:flex}
+.chat-view::-webkit-scrollbar{width:3px}
+.chat-view::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.mrow{display:flex;gap:12px;animation:slideIn .3s ease}
+.mrow.u{flex-direction:row-reverse}
+.mav{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px;font-family:'Syne',sans-serif}
+.mav.ai{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;box-shadow:0 0 12px rgba(0,212,200,0.3)}
+.mav.ai.sum{background:linear-gradient(135deg,var(--mode-sum),var(--mode-sum2));box-shadow:0 0 12px rgba(168,85,247,0.3)}
+.mav.ua{background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.mcnt{max-width:74%}
+.mname{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:5px;letter-spacing:.4px;font-family:'Syne',sans-serif;text-transform:uppercase}
+.mrow.u .mname{text-align:right}
+.bub{padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.75;word-break:break-word;font-family:'DM Sans',sans-serif;white-space:pre-wrap}
+.ai-b{background:rgba(7,17,26,0.85);border:1px solid var(--border2);color:var(--text);border-top-left-radius:3px;box-shadow:inset 0 1px 0 rgba(0,212,200,0.06),0 8px 24px rgba(0,0,0,0.35);backdrop-filter:blur(12px)}
+.ai-b.sum{border-color:rgba(168,85,247,0.25);box-shadow:inset 0 1px 0 rgba(168,85,247,0.06),0 8px 24px rgba(0,0,0,0.35)}
+.u-b{background:linear-gradient(135deg,rgba(0,180,180,0.18),rgba(0,100,150,0.22));border:1px solid rgba(0,212,200,0.25);color:var(--text);font-weight:500;border-top-right-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,0.35)}
+
+/* TYPING */
+.trow{display:flex;gap:12px;align-items:center}
+.tbub{display:none;background:rgba(7,17,26,0.85);border:1px solid var(--border2);padding:13px 18px;border-radius:14px;border-top-left-radius:3px;gap:5px;align-items:center}
+.tbub.on{display:flex}
+.td{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.4;animation:tda 1.3s infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes tda{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1)}}
+
+/* INPUT AREA */
+.input-area{position:fixed;bottom:0;right:0;z-index:50;padding:12px 24px 28px;background:linear-gradient(to top,rgba(3,6,10,1) 60%,transparent);transition:left .3s ease}
+.input-area.with-sb{left:260px}
+.input-area.no-sb{left:0}
+.ibox-wrap{max-width:740px;margin:0 auto}
+.iclear-btn{display:flex;align-items:center;justify-content:flex-end;margin-bottom:8px}
+.clear-label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);cursor:pointer;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:all .2s;font-family:'DM Sans',sans-serif}
+.clear-label:hover{color:var(--accent);border-color:var(--border2);background:rgba(0,212,200,0.05)}
+.clear-label svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.ibox{background:rgba(7,13,18,0.9);border:1px solid var(--border2);border-radius:14px;padding:14px 16px;display:flex;align-items:flex-end;gap:12px;transition:border-color .25s,box-shadow .25s;box-shadow:inset 0 1px 0 rgba(0,212,200,0.05),0 8px 32px rgba(0,0,0,0.6);backdrop-filter:blur(20px)}
+.ibox.sum-mode{border-color:rgba(168,85,247,0.25);box-shadow:inset 0 1px 0 rgba(168,85,247,0.05),0 8px 32px rgba(0,0,0,0.6)}
+.ibox:focus-within{border-color:rgba(0,212,200,0.35);box-shadow:inset 0 1px 0 rgba(0,212,200,0.08),0 0 0 3px rgba(0,212,200,0.07),0 8px 32px rgba(0,0,0,0.6)}
+.ibox.sum-mode:focus-within{border-color:rgba(168,85,247,0.45);box-shadow:inset 0 1px 0 rgba(168,85,247,0.1),0 0 0 3px rgba(168,85,247,0.08),0 8px 32px rgba(0,0,0,0.6)}
+.ci{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;resize:none;min-height:26px;max-height:160px;line-height:1.6}
+.ci::placeholder{color:var(--text3)}
+.sbtn{width:38px;height:38px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 0 16px rgba(0,212,200,0.35),0 4px 12px rgba(0,0,0,0.4)}
+.sbtn.sum-mode{background:linear-gradient(135deg,var(--mode-sum),var(--mode-sum2));box-shadow:0 0 16px rgba(168,85,247,0.35),0 4px 12px rgba(0,0,0,0.4)}
+.sbtn svg{width:16px;height:16px;fill:none;stroke:#000;stroke-width:2.5}
+.sbtn:hover{transform:translateY(-1px);box-shadow:0 0 24px rgba(0,212,200,0.5),0 6px 20px rgba(0,0,0,0.4)}
+.sbtn.sum-mode:hover{box-shadow:0 0 24px rgba(168,85,247,0.5),0 6px 20px rgba(0,0,0,0.4)}
+.sbtn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.ifoot{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;font-size:11px;color:var(--text3);font-family:'DM Sans',sans-serif}
+.ifoot kbd{background:var(--bg3);border:1px solid var(--border2);padding:1px 5px;border-radius:4px;font-size:10px;font-family:monospace}
+.err{background:rgba(255,60,60,0.08);border:1px solid rgba(255,80,80,0.2);border-radius:10px;padding:9px 16px;color:rgba(255,120,120,0.9);font-size:12px;text-align:center;margin-bottom:8px;font-family:'DM Sans',sans-serif}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:rgba(7,13,18,0.97);border:1px solid var(--border2);border-radius:18px;width:90%;max-width:540px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.7);animation:mIn .25s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(0,212,200,0.03)}
+.mhead h2{font-size:14px;font-weight:700;font-family:'Syne',sans-serif;color:var(--accent)}
+.mcls{background:rgba(0,212,200,0.07);border:1px solid var(--border2);border-radius:8px;color:var(--text2);cursor:pointer;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .2s}
+.mcls:hover{background:rgba(0,212,200,0.12);color:var(--text)}
+.mbody{padding:20px;overflow-y:auto;font-size:13px;line-height:1.8;color:var(--text2);font-family:'DM Sans',sans-serif}
+.mbody::-webkit-scrollbar{width:3px}
+.mbody::-webkit-scrollbar-thumb{background:var(--border2)}
+.hentry{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.hentry:last-child{border:none;margin:0}
+.hrole{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;font-family:'Syne',sans-serif}
+
+@media(max-width:700px){
+  .sidebar{display:none}
+  .topbar-center{display:none}
+  .input-area{left:0!important}
+}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<!-- mode indicator strip -->
+<div class="mode-indicator" id="modeIndicator"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="sb-toggle" onclick="toggleSidebar()">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </div>
+    <div class="logo">
+      <div class="logo-dot">Z</div>
+      Zyricon <em>AI</em>
+    </div>
+  </div>
+  <div class="topbar-center">
+    <button class="navbtn active">Chat</button>
+    <button class="navbtn">Features</button>
+    <button class="navbtn">Pricing</button>
+  </div>
+  <div class="topbar-right">
+    <div class="model-sel" id="modelLabel">Mistral · Global Mode<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+    <button class="tbtn" onclick="showHist()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>History
+    </button>
+    <button class="tbtn">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Export
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <button class="sb-newbtn" onclick="newChat()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Chat
+      </button>
+      <div class="sb-search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search chats..." oninput="filterHist(this.value)"/>
+      </div>
+    </div>
+
+    <div class="sb-body">
+
+      <!-- ══ MODE SWITCHER ══ -->
+      <div class="sb-label">AI Mode</div>
+      <div class="mode-switcher">
+        <div class="mode-btn global-btn active" id="globalBtn" onclick="setMode('global')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+          Global
+          <div class="mode-badge">FREE</div>
+        </div>
+        <div class="mode-btn sum-btn" id="sumBtn" onclick="setMode('summarize')">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Summarize
+          <div class="mode-badge">PRO</div>
+        </div>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- GLOBAL PROMPTS -->
+      <div class="global-prompts" id="globalPrompts">
+        <div class="sb-label">Quick Prompts</div>
+        <div class="sb-prompts">
+          <div class="sb-prompt-item" onclick="quickSend('Tell me a joke')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+            <div><div class="sb-prompt-text">Tell me a joke</div><div class="sb-prompt-sub">Lighten the mood</div></div>
+          </div>
+          <div class="sb-prompt-item" onclick="quickSend('Help me brainstorm ideas for ')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></div>
+            <div><div class="sb-prompt-text">Brainstorm</div><div class="sb-prompt-sub">Generate new ideas</div></div>
+          </div>
+          <div class="sb-prompt-item" onclick="quickSend('Help me make a plan for ')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+            <div><div class="sb-prompt-text">Make a plan</div><div class="sb-prompt-sub">Structure your goals</div></div>
+          </div>
+          <div class="sb-prompt-item" onclick="quickSend('Write code for ')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+            <div><div class="sb-prompt-text">Write code</div><div class="sb-prompt-sub">Generate any code</div></div>
+          </div>
+          <div class="sb-prompt-item" onclick="quickSend('Explain the concept of ')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div><div class="sb-prompt-text">Explain something</div><div class="sb-prompt-sub">Break it down simply</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUMMARIZE PROMPTS -->
+      <div class="sum-prompts hidden" id="sumPrompts">
+        <div class="sb-label">Summarize Prompts</div>
+        <div class="sb-prompts">
+          <div class="sb-prompt-item sum-prompt" onclick="quickSend('Summarize this news article:\n\n')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v2"/><path d="M2 12h10"/><path d="M2 16h10"/><path d="M2 20h10"/></svg></div>
+            <div><div class="sb-prompt-text">News Article</div><div class="sb-prompt-sub">Paste an article to summarize</div></div>
+          </div>
+          <div class="sb-prompt-item sum-prompt" onclick="quickSend('Summarize this story:\n\n')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div>
+            <div><div class="sb-prompt-text">Story / Book</div><div class="sb-prompt-sub">Summarize any long story</div></div>
+          </div>
+          <div class="sb-prompt-item sum-prompt" onclick="quickSend('Extract key points from this text:\n\n')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+            <div><div class="sb-prompt-text">Key Points</div><div class="sb-prompt-sub">Extract bullet points</div></div>
+          </div>
+          <div class="sb-prompt-item sum-prompt" onclick="quickSend('Summarize this research paper:\n\n')">
+            <div class="sb-prompt-icon"><svg viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+            <div><div class="sb-prompt-text">Research Paper</div><div class="sb-prompt-sub">Digest academic text</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- SYSTEM MESSAGES -->
+      <div class="sb-label">System</div>
+      <div class="sb-sys">
+        <div class="sb-sys-hdr" onclick="toggleSysMsgs()">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span class="sb-sys-hdr-label">System Messages</span>
+          <div class="sb-dot"></div>
+          <svg class="chevron open" id="sysChevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sb-sys-body" id="sysMsgsBody"></div>
+      </div>
+
+      <!-- RECENT CHATS -->
+      <div class="sb-label">Recent Chats</div>
+      <div id="histList">
+        <div class="sb-empty" id="emptyHist">No chats yet — start a conversation!</div>
+      </div>
+    </div>
+
+    <div class="sb-foot">
+      <div class="sb-foot-av">U</div>
+      <div class="sb-foot-info">
+        <div class="sb-foot-name">You</div>
+        <div class="sb-foot-sub" id="footMode">Global Mode Active</div>
+      </div>
+      <div class="sb-foot-badge" id="footBadge">GLOBAL</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <canvas id="orb"></canvas>
+
+    <div class="welcome" id="welcome">
+      <div class="orb-space">
+        <div class="welcome-badge"><span></span> Powered by Mistral AI</div>
+      </div>
+      <h1>Chat with <em>AI</em></h1>
+      <p>Simply ask your AI assistant to generate anything</p>
+      <div class="welcome-hint">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        Pick a mode from the sidebar, then type below
+      </div>
+    </div>
+
+    <div class="chat-view" id="cv">
+      <div class="trow">
+        <div class="mav ai" id="typingAv">Z</div>
+        <div class="tbub" id="tb"><div class="td"></div><div class="td"></div><div class="td"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INPUT -->
+<div class="input-area with-sb" id="inputArea">
+  <div class="ibox-wrap">
+    <div id="errBar"></div>
+    <div class="iclear-btn" id="clearBtnRow" style="display:none">
+      <div class="clear-label" onclick="newChat()">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Clear chat
+      </div>
+    </div>
+    <div class="ibox" id="ibox">
+      <textarea class="ci" id="ci" rows="1" placeholder="Ask me anything..."></textarea>
+      <button class="sbtn" id="sb" onclick="send()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+    </div>
+    <div class="ifoot">
+      <span>Press <kbd>Enter</kbd> to send</span>&nbsp;·&nbsp;<span><kbd>Shift+Enter</kbd> for new line</span>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="modal-bg" id="mb" onclick="if(event.target===this)closeHist()">
+  <div class="modal">
+    <div class="mhead"><h2>Chat History</h2><button class="mcls" onclick="closeHist()">Close</button></div>
+    <div class="mbody" id="mbody"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── ORB ──
+(function(){
+  const canvas=document.getElementById('orb');
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(300,300);
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(45,1,.1,100);
+  camera.position.z=3;
+  const N=3500,pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    const phi=Math.acos(1-2*(i+.5)/N),theta=Math.PI*(1+Math.sqrt(5))*i;
+    const r=1+(Math.random()-.5)*.12;
+    pos[i*3]=r*Math.sin(phi)*Math.cos(theta);
+    pos[i*3+1]=r*Math.sin(phi)*Math.sin(theta);
+    pos[i*3+2]=r*Math.cos(phi);
+    const t=.7+Math.random()*.3;col[i*3]=t;col[i*3+1]=t;col[i*3+2]=t;
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const mat=new THREE.PointsMaterial({size:.022,vertexColors:true,transparent:true,opacity:.9,sizeAttenuation:true});
+  const orb=new THREE.Points(geo,mat);scene.add(orb);
+  let mx=0,my=0,frame=0;
+  document.addEventListener('mousemove',e=>{mx=(e.clientX/innerWidth-.5)*.5;my=(e.clientY/innerHeight-.5)*.5});
+  function animate(){requestAnimationFrame(animate);frame++;orb.rotation.y+=.0025;orb.rotation.y+=(mx-orb.rotation.y)*.015;orb.rotation.x+=(-my-orb.rotation.x)*.015;const s=1+Math.sin(frame*.018)*.025;orb.scale.set(s,s,s);renderer.render(scene,camera)}
+  animate();
+  setTimeout(()=>canvas.classList.add('show'),400);
+})();
+
+// ── STATE ──
+const BACKEND='http://127.0.0.1:8000';
+const cv=document.getElementById('cv');
+const wel=document.getElementById('welcome');
+const tb=document.getElementById('tb');
+const ci=document.getElementById('ci');
+const sb=document.getElementById('sb');
+const errBar=document.getElementById('errBar');
+const clearRow=document.getElementById('clearBtnRow');
+const inputArea=document.getElementById('inputArea');
+const sidebarEl=document.getElementById('sidebar');
+const sysMsgsBody=document.getElementById('sysMsgsBody');
+const histList=document.getElementById('histList');
+const emptyHist=document.getElementById('emptyHist');
+const ibox=document.getElementById('ibox');
+const sendBtn=document.getElementById('sb');
+const typingAv=document.getElementById('typingAv');
+const modeIndicator=document.getElementById('modeIndicator');
+
+let hist=[],started=false,sidebarOpen=true,sysMsgsOpen=true;
+let currentMode='global'; // 'global' | 'summarize'
+
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+
+// ── MODE SWITCHER ──
+function setMode(mode){
+  currentMode=mode;
+  const isSum=mode==='summarize';
+
+  // button states
+  document.getElementById('globalBtn').classList.toggle('active',!isSum);
+  document.getElementById('sumBtn').classList.toggle('active',isSum);
+
+  // prompts visibility
+  document.getElementById('globalPrompts').classList.toggle('hidden',isSum);
+  document.getElementById('sumPrompts').classList.toggle('hidden',!isSum);
+
+  // input box style
+  ibox.classList.toggle('sum-mode',isSum);
+  sendBtn.classList.toggle('sum-mode',isSum);
+
+  // placeholder
+  ci.placeholder=isSum
+    ? 'Paste your text here to summarize...'
+    : 'Ask me anything...';
+
+  // top indicator bar
+  modeIndicator.classList.toggle('sum',isSum);
+
+  // topbar model label
+  document.getElementById('modelLabel').innerHTML=
+    `Mistral · ${isSum?'Summarize':'Global'} Mode<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+  // footer
+  document.getElementById('footMode').textContent=isSum?'Summarize Mode Active':'Global Mode Active';
+  document.getElementById('footBadge').textContent=isSum?'SUM':'GLOBAL';
+  document.getElementById('footBadge').style.color=isSum?'var(--mode-sum)':'var(--accent)';
+  document.getElementById('footBadge').style.borderColor=isSum?'rgba(168,85,247,0.3)':'';
+
+  // typing indicator avatar color
+  typingAv.classList.toggle('sum',isSum);
+
+  // log to system
+  addSysMsg(`Switched to ${isSum?'Summarize':'Global'} Mode`);
+
+  // if chat already started, insert a mode-change pill
+  if(started) insertModePill(mode);
+}
+
+function insertModePill(mode){
+  const isSum=mode==='summarize';
+  const pill=document.createElement('div');
+  pill.style.display='flex';pill.style.justifyContent='center';
+  pill.innerHTML=`<div class="mode-context-pill ${isSum?'sum':'global'}"><span></span>${isSum?'📄 Summarize Mode':'🌐 Global Mode'}</div>`;
+  cv.insertBefore(pill,cv.querySelector('.trow'));
+  cv.scrollTop=cv.scrollHeight;
+}
+
+// ── SIDEBAR ──
+function toggleSidebar(){
+  sidebarOpen=!sidebarOpen;
+  sidebarEl.classList.toggle('collapsed',!sidebarOpen);
+  inputArea.className='input-area '+(sidebarOpen?'with-sb':'no-sb');
+}
+
+// ── SYSTEM MESSAGES ──
+function toggleSysMsgs(){
+  sysMsgsOpen=!sysMsgsOpen;
+  sysMsgsBody.style.display=sysMsgsOpen?'flex':'none';
+  document.getElementById('sysChevron').classList.toggle('open',sysMsgsOpen);
+}
+function addSysMsg(text){
+  const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const el=document.createElement('div');
+  el.className='sb-sys-msg';
+  el.innerHTML=`<div class="sb-sys-av">Z</div><div><div class="sb-sys-txt">${esc(text)}</div><div class="sb-sys-time">${time}</div></div>`;
+  sysMsgsBody.appendChild(el);
+  sysMsgsBody.scrollTop=sysMsgsBody.scrollHeight;
+}
+
+// ── HISTORY SIDEBAR ──
+function addHistEntry(preview){
+  if(emptyHist) emptyHist.style.display='none';
+  histList.querySelectorAll('.sb-hist-item').forEach(i=>i.classList.remove('active'));
+  const item=document.createElement('div');
+  item.className='sb-hist-item active';
+  const icon=currentMode==='summarize'
+    ?'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>'
+    :'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>';
+  item.innerHTML=`<svg viewBox="0 0 24 24">${icon}</svg><span>${esc(preview)}</span>`;
+  histList.insertBefore(item,histList.firstChild);
+}
+function filterHist(q){
+  histList.querySelectorAll('.sb-hist-item').forEach(i=>{
+    i.style.display=i.querySelector('span').textContent.toLowerCase().includes(q.toLowerCase())?'flex':'none';
+  });
+}
+
+// ── CHAT CORE ──
+function go(){
+  if(!started){
+    started=true;
+    wel.classList.add('gone');
+    cv.classList.add('on');
+    clearRow.style.display='flex';
+    setTimeout(()=>addGreeting(),300);
+  }
+}
+function addGreeting(){
+  const isSum=currentMode==='summarize';
+  const msg=isSum
+    ? '📄 Summarize Mode active! Paste any long text — article, story, or document — and I\'ll extract the key information for you.'
+    : '👋 Global Mode active! Ask me anything — jokes, ideas, coding, explanations. I\'m here to help!';
+  const r=document.createElement('div');
+  r.className='mrow';
+  r.innerHTML=`<div class="mav ai ${isSum?'sum':''}">Z</div><div class="mcnt"><div class="mname">Zyricon AI</div><div class="bub ai-b ${isSum?'sum':''}">${esc(msg)}</div></div>`;
+  cv.insertBefore(r,cv.querySelector('.trow'));
+  cv.scrollTop=cv.scrollHeight;
+  addSysMsg('Session started · '+currentMode+' mode');
+}
+function load(v){
+  sendBtn.disabled=v;ci.disabled=v;
+  tb.classList.toggle('on',v);
+  cv.scrollTop=cv.scrollHeight;
+}
+function addMsg(role,text,mode){
+  go();
+  const u=role==='user';
+  const isSum=mode==='summarize';
+  const r=document.createElement('div');
+  r.className='mrow'+(u?' u':'');
+  r.innerHTML=`<div class="mav ${u?'ua':`ai${isSum?' sum':''}`}">${u?'U':'Z'}</div><div class="mcnt"><div class="mname">${u?'You':'Zyricon AI'}</div><div class="bub ${u?'u-b':`ai-b${isSum?' sum':''}`}">${esc(text)}</div></div>`;
+  cv.insertBefore(r,cv.querySelector('.trow'));
+  cv.scrollTop=cv.scrollHeight;
+}
+function showErr(m){
+  errBar.innerHTML=`<div class="err">⚠ ${m}</div>`;
+  setTimeout(()=>errBar.innerHTML='',5000);
+}
+
+// ── QUICK PROMPT ──
+function quickSend(text){
+  ci.value=text;ci.focus();resize();
+  if(!text.endsWith(' ')&&!text.endsWith('\n\n')){send()}
+}
+
+// ── SEND ──
+async function send(){
+  const text=ci.value.trim();
+  if(!text||sendBtn.disabled)return;
+  ci.value='';resize();
+  const mode=currentMode;
+  if(!started) addHistEntry(text.slice(0,30)+(text.length>30?'…':''));
+  addMsg('user',text,mode);
+  hist.push({role:'user',content:text,mode});
+  load(true);
+  try{
+    const res=await fetch(`${BACKEND}/chat`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt:text,mode})
+    });
+    if(!res.ok)throw new Error();
+    const d=await res.json();
+    addMsg('bot',d.reply,mode);
+    addSysMsg(`[${mode}] AI replied: `+d.reply.slice(0,45)+(d.reply.length>45?'…':''));
+    hist.push({role:'assistant',content:d.reply,mode});
+  }catch{
+    showErr('Cannot reach backend. Run: uvicorn api:app --port 8000');
+    addSysMsg('⚠ Backend unreachable');
+  }finally{
+    load(false);ci.focus();
+  }
+}
+
+async function newChat(){
+  cv.querySelectorAll('.mrow,.mode-context-pill').forEach(r=>r.remove());
+  hist=[];started=false;
+  wel.classList.remove('gone');cv.classList.remove('on');
+  errBar.innerHTML='';clearRow.style.display='none';
+  sysMsgsBody.innerHTML='';
+  await fetch(`${BACKEND}/reset`,{method:'POST'}).catch(()=>{});
+}
+
+function showHist(){
+  document.getElementById('mbody').innerHTML=hist.length
+    ?hist.map(m=>`<div class="hentry"><div class="hrole" style="color:${m.role==='user'?'#00d4c8':'rgba(150,200,210,.4)'}">${m.role==='user'?'You':'AI'} · ${m.mode||'global'}</div>${esc(m.content)}</div>`).join('')
+    :'<p style="color:rgba(150,200,210,.3);text-align:center;padding:20px 0">No messages yet</p>';
+  document.getElementById('mb').classList.add('on');
+}
+function closeHist(){document.getElementById('mb').classList.remove('on')}
+
+function resize(){ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,160)+'px'}
+ci.addEventListener('input',resize);
+ci.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+</script>
+</body>
+</html>
