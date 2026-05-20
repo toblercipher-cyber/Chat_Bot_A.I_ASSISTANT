@@ -739,6 +739,11 @@ function closeHist(){document.getElementById('mb').classList.remove('on')}
 function resize(){ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,160)+'px'}
 ci.addEventListener('input',resize);
 ci.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+  // Change this:
+const BACKEND = 'http://127.0.0.1:8000';
+
+// To your Render URL:
+const BACKEND = 'https://your-app.onrender.com';
 </script>
 </body>
 </html>
